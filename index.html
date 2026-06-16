@@ -33,15 +33,66 @@
                     </div>
                 </div>
 
-                <div class="filter-group">
-                    <h3>Trier par</h3>
-                    <select id="sort-select" class="sort-dropdown">
-                        <option value="date_asc">Date de sortie (Plus ancien au plus récent)</option>
-                        <option value="date_desc">Date de sortie (Plus récent au plus ancien)</option>
-                        <option value="popular">Popularité (Plus d'évaluations)</option>
-                        <option value="rating_desc">Mieux notés</option>
-                        <option value="rating_asc">Moins bien notés</option>
-                    </select>
+                <div class="filter-group dropdowns-grid">
+                    <div>
+                        <h3>Genre (Mécaniques)</h3>
+                        <select id="genre-select" class="sort-dropdown">
+                            <option value="all">Tous les genres</option>
+                            <option value="33">Arcade</option>
+                            <option value="31">Aventure</option>
+                            <option value="35">Cartes et Plateau</option>
+                            <option value="4">Combat</option>
+                            <option value="10">Course</option>
+                            <option value="30">Flipper</option>
+                            <option value="25">Hack and slash / Beat 'em up</option>
+                            <option value="32">Indépendant</option>
+                            <option value="36">MOBA</option>
+                            <option value="7">Musique</option>
+                            <option value="8">Plateforme</option>
+                            <option value="2">Point-and-click</option>
+                            <option value="26">Quiz / Trivia</option>
+                            <option value="12">RPG (Jeu de rôle)</option>
+                            <option value="11">RTS (Stratégie temps réel)</option>
+                            <option value="9">Réflexion / Puzzle</option>
+                            <option value="5">Shooter (FPS/TPS)</option>
+                            <option value="13">Simulateur / Gestion</option>
+                            <option value="14">Sport</option>
+                            <option value="15">Stratégie</option>
+                            <option value="16">Stratégie au tour par tour</option>
+                            <option value="24">Tactique</option>
+                            <option value="34">Visual Novel</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <h3>Univers / Thème</h3>
+                        <select id="theme-select" class="sort-dropdown">
+                            <option value="all">Tous les univers</option>
+                            <option value="31">Drame</option>
+                            <option value="17">Fantasy</option>
+                            <option value="39">Guerre</option>
+                            <option value="22">Historique</option>
+                            <option value="19">Horreur</option>
+                            <option value="38">Monde ouvert (Open World)</option>
+                            <option value="43">Mystère</option>
+                            <option value="32">Non-fiction</option>
+                            <option value="33">Sandbox</option>
+                            <option value="18">Science-Fiction</option>
+                            <option value="21">Survie (Survival)</option>
+                            <option value="20">Thriller</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <h3>Trier par</h3>
+                        <select id="sort-select" class="sort-dropdown">
+                            <option value="date_asc">Date (Plus ancien)</option>
+                            <option value="date_desc">Date (Plus récent)</option>
+                            <option value="popular">Popularité</option>
+                            <option value="rating_desc">Mieux notés</option>
+                            <option value="rating_asc">Moins bien notés</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
