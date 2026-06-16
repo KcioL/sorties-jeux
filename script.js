@@ -273,10 +273,11 @@ function renderGames(games, isAppending) {
             ? game.platforms.map(p => `<span class="platform-badge">${p.name}</span>`).join('')
             : '<span class="platform-badge">Inconnue</span>';
 
-        // Recherche du lien Steam (Catégorie 13)
+       // Recherche du lien Steam en lisant directement l'URL
         let steamUrl = null;
         if (game.websites) {
-            const steamSite = game.websites.find(site => site.category === 13);
+            // On cherche un site dont l'URL contient "steampowered"
+            const steamSite = game.websites.find(site => site.url && site.url.includes('steampowered.com'));
             if (steamSite) {
                 steamUrl = steamSite.url;
             }
