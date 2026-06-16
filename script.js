@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Configuration des écouteurs d'événements
 function setupEventListeners() {
-    // Écouteur pour le menu déroulant de l'année
+    // Écouteur pour l'année
     document.getElementById('year-select').addEventListener('change', (e) => {
         state.currentYear = e.target.value;
         state.offset = 0; 
@@ -68,13 +68,13 @@ function setupEventListeners() {
         }
     });
 
-    // Bouton et Entrée pour la recherche textuelle
+    // Recherche textuelle
     document.getElementById('search-btn').addEventListener('click', executeSearch);
     document.getElementById('search-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') executeSearch();
     });
 
-    // Bouton "Charger plus" pour la pagination
+    // Bouton "Charger plus"
     const loadMoreBtn = document.getElementById('load-more-btn');
     if (loadMoreBtn) {
         loadMoreBtn.addEventListener('click', () => {
@@ -83,7 +83,7 @@ function setupEventListeners() {
         });
     }
 
-    // Écouteurs pour les menus déroulants
+    // Menus déroulants
     document.getElementById('sort-select').addEventListener('change', (e) => {
         state.currentSort = e.target.value;
         state.offset = 0; 
@@ -134,7 +134,6 @@ async function loadGames(isAppending = false) {
     
     errorDisplay.style.display = 'none';
 
-    // Mise à jour du titre
     if (state.searchQuery) {
         sectionTitle.textContent = `Résultats de recherche pour : "${state.searchQuery}"`;
     } else {
@@ -143,20 +142,18 @@ async function loadGames(isAppending = false) {
     }
 
     let bodyQuery = '';
+    // NOUVEAU : Ajout de websites.category et websites.url dans la requête
     const fields = "fields name, cover.url, first_release_date, platforms.name, total_rating, websites.category, websites.url;";
     
     if (state.searchQuery) {
-        // Mode recherche
         bodyQuery = `${fields} search "${state.searchQuery}"; limit 40; offset ${state.offset};`;
     } else if (state.currentQuarter === 'anticipated') {
-        // Mode "Les plus attendus"
         sectionTitle.textContent = `Les 30 jeux les plus attendus de ${state.currentYear}`;
         document.getElementById('sort-select').value = 'date_asc'; 
         
         const timeRange = getTimestamps(state.currentYear)['all'];
         let conditions = `first_release_date >= ${timeRange.start} & first_release_date <= ${timeRange.end} & hypes != null`;
         
-        // Filtres stricts (ET)
         if (state.currentPlatform !== 'all') {
             conditions += ` & platforms = ${state.currentPlatform}`;
         }
@@ -170,11 +167,9 @@ async function loadGames(isAppending = false) {
         bodyQuery = `${fields} where ${conditions}; sort hypes desc; limit 30; offset ${state.offset};`;
         
     } else {
-        // Mode catalogue standard
         const timeRange = getTimestamps(state.currentYear)[state.currentQuarter];
         let conditions = `first_release_date >= ${timeRange.start} & first_release_date <= ${timeRange.end}`;
         
-        // Filtres stricts (ET)
         if (state.currentPlatform !== 'all') {
             conditions += ` & platforms = ${state.currentPlatform}`;
         }
@@ -185,7 +180,6 @@ async function loadGames(isAppending = false) {
             conditions += ` & themes = ${state.currentTheme}`;
         }
         
-        // Logique de tri
         let sortLogic = "";
         switch(state.currentSort) {
             case 'date_asc': 
@@ -279,15 +273,38 @@ function renderGames(games, isAppending) {
             ? game.platforms.map(p => `<span class="platform-badge">${p.name}</span>`).join('')
             : '<span class="platform-badge">Inconnue</span>';
 
-        const card = document.createElement('div');
+        // Recherche du lien Steam (Catégorie 13)
+        let steamUrl = null;
+        if (game.websites) {
+            const steamSite = game.websites.find(site => site.category === 13);
+            if (steamSite) {
+                steamUrl = steamSite.url;
+            }
+        }
+
+        // Création de la carte (<a> si Steam, <div> sinon)
+        const card = steamUrl ? document.createElement('a') : document.createElement('div');
         card.className = 'game-card';
+        
+        if (steamUrl) {
+            card.href = steamUrl;
+            card.target = "_blank"; 
+            card.rel = "noopener noreferrer"; 
+            card.style.textDecoration = "none"; 
+            card.style.color = "inherit"; 
+            card.title = "Voir sur Steam"; 
+        }
+
         card.innerHTML = `
             <div class="cover-wrapper">
                 <img src="${coverUrl}" alt="Jaquette de ${game.name}" loading="lazy">
                 <div class="game-rating">${rating}</div>
             </div>
             <div class="game-info">
-                <div class="game-title">${game.name}</div>
+                <div class="game-title">
+                    ${game.name} 
+                    ${steamUrl ? '<span style="font-size: 0.8em; opacity: 0.7;" title="Lien Steam disponible">🔗</span>' : ''}
+                </div>
                 <div class="game-release-date">📅 ${releaseDateStr}</div>
                 <div class="game-platforms">
                     ${platformsHtml}
