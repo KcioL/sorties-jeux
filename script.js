@@ -1,7 +1,6 @@
 // Gestion des États (State) de l'Application
+// Gestion des États (State) de l'Application
 const state = {
-    clientId: localStorage.getItem('igdb_client_id') || '',
-    accessToken: localStorage.getItem('igdb_access_token') || '',
     currentQuarter: 'all',
     currentPlatform: 'all',
     searchQuery: ''
@@ -24,37 +23,11 @@ const quartersTimestamps = {
 };
 
 // Initialisation au chargement de la page
+// Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
-    initApiConfig();
     setupEventListeners();
-    if (state.clientId && state.accessToken) {
-        loadGames();
-    } else {
-        showError("Veuillez renseigner vos identifiants d'API IGDB ci-dessus pour charger les données.");
-    }
+    loadGames(); // On lance directement le chargement des jeux via Netlify
 });
-
-// Gestion du panneau de configuration des clés API
-function initApiConfig() {
-    if (state.clientId) document.getElementById('client-id').value = state.clientId;
-    if (state.accessToken) document.getElementById('access-token').value = state.accessToken;
-
-    document.getElementById('save-config-btn').addEventListener('click', () => {
-        const cid = document.getElementById('client-id').value.trim();
-        const token = document.getElementById('access-token').value.trim();
-
-        if (cid && token) {
-            localStorage.setItem('igdb_client_id', cid);
-            localStorage.setItem('igdb_access_token', token);
-            state.clientId = cid;
-            state.accessToken = token;
-            errorDisplay.style.display = 'none';
-            loadGames();
-        } else {
-            alert('Veuillez remplir les deux champs.');
-        }
-    });
-}
 
 // Configuration des écouteurs d'événements pour les filtres et la recherche
 function setupEventListeners() {
