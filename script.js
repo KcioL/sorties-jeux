@@ -3,7 +3,8 @@
 const state = {
     currentQuarter: 'all',
     currentPlatform: 'all',
-    searchQuery: ''
+    searchQuery: '',
+    offset: 0 // <-- On commence à 0
 };
 
 // Éléments du DOM
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Configuration des écouteurs d'événements pour les filtres et la recherche
+// Configuration des écouteurs d'événements pour les filtres et la recherche
 function setupEventListeners() {
     // Filtres de trimestres
     document.getElementById('quarter-filters').addEventListener('click', (e) => {
@@ -39,6 +41,9 @@ function setupEventListeners() {
             state.currentQuarter = e.target.dataset.quarter;
             state.searchQuery = ''; // Réinitialise la recherche textuelle lors du filtrage par période
             document.getElementById('search-input').value = '';
+            
+            // NOUVEAU : On remet l'offset à zéro quand on change de trimestre
+            state.offset = 0; 
             loadGames();
         }
     });
@@ -49,6 +54,9 @@ function setupEventListeners() {
             document.querySelectorAll('#platform-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
             e.target.classList.add('active');
             state.currentPlatform = e.target.dataset.platform;
+            
+            // NOUVEAU : On remet l'offset à zéro quand on change de plateforme
+            state.offset = 0; 
             loadGames();
         }
     });
@@ -58,8 +66,18 @@ function setupEventListeners() {
     document.getElementById('search-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') executeSearch();
     });
+
+    // NOUVEAU : Écouteur pour le bouton "Charger plus"
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => {
+            state.offset += 40; // On décale de 40 jeux
+            loadGames(true); // Le "true" indique qu'on ajoute à la suite sans effacer
+        });
+    }
 }
 
+// Fonction de recherche textuelle
 function executeSearch() {
     const query = document.getElementById('search-input').value.trim();
     if (query) {
@@ -68,15 +86,26 @@ function executeSearch() {
         document.querySelectorAll('#quarter-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector('[data-quarter="all"]').classList.add('active');
         state.currentQuarter = 'all';
+        
+        // NOUVEAU : On remet l'offset à zéro pour une nouvelle recherche
+        state.offset = 0; 
         loadGames();
     }
 }
 
-// Construction de la requête IGDB (Syntaxe Apicalypse) et appel API
-async function loadGames() {
-    showLoading(true);
+// Construction de la requête IGDB et appel API (PARTIE C)
+async function loadGames(isAppending = false) {
+    // NOUVEAU : Gestion de l'affichage selon si on charge une nouvelle page ou la suite
+    if (!isAppending) {
+        showLoading(true);
+        gamesContainer.innerHTML = '';
+        state.offset = 0; // Sécurité
+    } else {
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        if (loadMoreBtn) loadMoreBtn.textContent = 'Chargement en cours...';
+    }
+    
     errorDisplay.style.display = 'none';
-    gamesContainer.innerHTML = '';
 
     // Détermination de l'intitulé de la section
     if (state.searchQuery) {
@@ -91,8 +120,8 @@ async function loadGames() {
     const fields = "fields name, cover.url, first_release_date, platforms.name, total_rating;";
     
     if (state.searchQuery) {
-        // Mode recherche textuelle
-        bodyQuery = `${fields} search "${state.searchQuery}"; limit 40;`;
+        // NOUVEAU : Ajout de l'offset à la fin de la requête de recherche
+        bodyQuery = `${fields} search "${state.searchQuery}"; limit 40; offset ${state.offset};`;
     } else {
         // Mode catalogue par dates / trimestres
         const timeRange = quartersTimestamps[state.currentQuarter];
@@ -103,12 +132,16 @@ async function loadGames() {
             conditions += ` & platforms = ${state.currentPlatform}`;
         }
         
-        bodyQuery = `${fields} where ${conditions}; sort first_release_date asc; limit 40;`;
+        // Logique de tri (popularité pour l'année complète, sinon chronologique)
+        let sortLogic = state.currentQuarter === 'all' 
+            ? "sort total_rating_count desc;" 
+            : "sort first_release_date asc;";
+        
+        // NOUVEAU : Ajout de l'offset à la fin de la requête catalogue
+        bodyQuery = `${fields} where ${conditions}; ${sortLogic} limit 40; offset ${state.offset};`;
     }
 
     try {
-        // Plus besoin de headers, de proxy, ni de clés ici !
-        // On interroge simplement notre propre fonction Netlify
         const response = await fetch('/.netlify/functions/getGames', {
             method: 'POST',
             body: bodyQuery
@@ -119,19 +152,37 @@ async function loadGames() {
         }
 
         const games = await response.json();
-        renderGames(games);
+        
+        // NOUVEAU : On transmet la variable isAppending au rendu
+        renderGames(games, isAppending);
     } catch (error) {
         showError(error.message);
     } finally {
-        showLoading(false);
+        if (!isAppending) showLoading(false);
     }
 }
 
-// Rendu des cartes de jeux dans la grille HTML
-function renderGames(games) {
+// Rendu des cartes de jeux dans la grille HTML (PARTIE D)
+function renderGames(games, isAppending) {
+    const loadMoreBtn = document.getElementById('load-more-btn');
+
+    // NOUVEAU : Gestion du bouton si la base de données n'a plus de jeux à donner
     if (!games || games.length === 0) {
-        gamesContainer.innerHTML = `<div class="loading-spinner">Aucun jeu trouvé pour les critères sélectionnés.</div>`;
+        if (!isAppending) {
+            gamesContainer.innerHTML = `<div class="loading-spinner">Aucun jeu trouvé pour les critères sélectionnés.</div>`;
+        }
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         return;
+    }
+
+    // NOUVEAU : Si on reçoit moins de 40 jeux, on est à la fin, on cache le bouton
+    if (loadMoreBtn) {
+        if (games.length < 40) {
+            loadMoreBtn.style.display = 'none';
+        } else {
+            loadMoreBtn.style.display = 'inline-block';
+            loadMoreBtn.textContent = 'Charger plus de jeux';
+        }
     }
 
     // Filtrage secondaire optionnel si on est en mode recherche textuelle (pour la plateforme uniquement)
@@ -143,7 +194,7 @@ function renderGames(games) {
     }
 
     filteredGames.forEach(game => {
-        // Gestion de l'image de couverture (remplacement de 't_thumb' par 't_cover_big' pour une meilleure qualité)
+        // Gestion de l'image de couverture
         let coverUrl = 'https://via.placeholder.com/264x352/121e36/f1f5f9?text=Pas+d%27image';
         if (game.cover && game.cover.url) {
             coverUrl = game.cover.url.replace('t_thumb', 't_cover_big');
