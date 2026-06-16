@@ -108,8 +108,9 @@ function executeSearch() {
 }
 
 // Construction de la requête IGDB et appel API (PARTIE C)
+// Construction de la requête IGDB et appel API (PARTIE C)
 async function loadGames(isAppending = false) {
-    // NOUVEAU : Gestion de l'affichage selon si on charge une nouvelle page ou la suite
+    // Gestion de l'affichage selon si on charge une nouvelle page ou la suite
     if (!isAppending) {
         showLoading(true);
         gamesContainer.innerHTML = '';
@@ -185,8 +186,28 @@ async function loadGames(isAppending = false) {
         
         bodyQuery = `${fields} where ${conditions}; ${sortLogic} limit 40; offset ${state.offset};`;
     }
-}
 
+    // NOUVEAU (Le bloc manquant pour appeler le serveur Netlify)
+    try {
+        const response = await fetch('/.netlify/functions/getGames', {
+            method: 'POST',
+            body: bodyQuery
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erreur de chargement (Code: ${response.status})`);
+        }
+
+        const games = await response.json();
+        
+        // On transmet la variable isAppending au rendu
+        renderGames(games, isAppending);
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        if (!isAppending) showLoading(false);
+    }
+}
 // Rendu des cartes de jeux dans la grille HTML (PARTIE D)
 function renderGames(games, isAppending) {
     const loadMoreBtn = document.getElementById('load-more-btn');
