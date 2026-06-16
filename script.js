@@ -4,6 +4,7 @@ const state = {
     currentQuarter: 'all',
     currentPlatform: 'all',
     searchQuery: '',
+    currentSort: 'date_asc', // Ajout du tri par défaut
     offset: 0 // <-- On commence à 0
 };
 
@@ -75,6 +76,19 @@ function setupEventListeners() {
             loadGames(true); // Le "true" indique qu'on ajoute à la suite sans effacer
         });
     }
+    document.getElementById('sort-select').addEventListener('change', (e) => {
+        state.currentSort = e.target.value;
+        state.offset = 0; // On remet à zéro quand on change le tri
+        
+        // Si on était sur "Les plus attendus", on repasse sur "Toute l'année" 
+        // car le tri personnalise l'affichage
+        if(state.currentQuarter === 'anticipated') {
+            document.querySelectorAll('#quarter-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('[data-quarter="all"]').classList.add('active');
+            state.currentQuarter = 'all';
+        }
+        loadGames();
+    });
 }
 
 // Fonction de recherche textuelle
@@ -120,45 +134,56 @@ async function loadGames(isAppending = false) {
     const fields = "fields name, cover.url, first_release_date, platforms.name, total_rating;";
     
     if (state.searchQuery) {
-        // NOUVEAU : Ajout de l'offset à la fin de la requête de recherche
         bodyQuery = `${fields} search "${state.searchQuery}"; limit 40; offset ${state.offset};`;
-    } else {
-        // Mode catalogue par dates / trimestres
-        const timeRange = quartersTimestamps[state.currentQuarter];
-        let conditions = `first_release_date >= ${timeRange.start} & first_release_date <= ${timeRange.end}`;
+    } else if (state.currentQuarter === 'anticipated') {
+        // LOGIQUE POUR LES JEUX LES PLUS ATTENDUS (Top 30)
+        sectionTitle.textContent = `Les 30 jeux les plus attendus de ${CURRENT_YEAR}`;
+        document.getElementById('sort-select').value = 'date_asc'; // Visuellement réinitialiser le tri
         
-        // Ajout du filtre plateforme si sélectionné
+        const timeRange = quartersTimestamps['all'];
+        // On exige qu'il y ait des hypes (attentes) pour ce jeu
+        let conditions = `first_release_date >= ${timeRange.start} & first_release_date <= ${timeRange.end} & hypes != null`;
+        
         if (state.currentPlatform !== 'all') {
             conditions += ` & platforms = ${state.currentPlatform}`;
         }
         
-        // Logique de tri (popularité pour l'année complète, sinon chronologique)
-        let sortLogic = state.currentQuarter === 'all' 
-            ? "sort total_rating_count desc;" 
-            : "sort first_release_date asc;";
+        // On trie par le nombre de "hypes" décroissant et on limite à 30
+        bodyQuery = `${fields} where ${conditions}; sort hypes desc; limit 30; offset ${state.offset};`;
         
-        // NOUVEAU : Ajout de l'offset à la fin de la requête catalogue
-        bodyQuery = `${fields} where ${conditions}; ${sortLogic} limit 40; offset ${state.offset};`;
-    }
-
-    try {
-        const response = await fetch('/.netlify/functions/getGames', {
-            method: 'POST',
-            body: bodyQuery
-        });
-
-        if (!response.ok) {
-            throw new Error(`Erreur de chargement (Code: ${response.status})`);
+    } else {
+        // MODE CATALOGUE STANDARD
+        const timeRange = quartersTimestamps[state.currentQuarter];
+        let conditions = `first_release_date >= ${timeRange.start} & first_release_date <= ${timeRange.end}`;
+        
+        if (state.currentPlatform !== 'all') {
+            conditions += ` & platforms = ${state.currentPlatform}`;
         }
-
-        const games = await response.json();
         
-        // NOUVEAU : On transmet la variable isAppending au rendu
-        renderGames(games, isAppending);
-    } catch (error) {
-        showError(error.message);
-    } finally {
-        if (!isAppending) showLoading(false);
+        // Application du tri sélectionné dans le menu déroulant
+        let sortLogic = "";
+        switch(state.currentSort) {
+            case 'date_asc': 
+                sortLogic = "sort first_release_date asc;"; 
+                break;
+            case 'date_desc': 
+                sortLogic = "sort first_release_date desc;"; 
+                break;
+            case 'popular': 
+                sortLogic = "sort total_rating_count desc;"; 
+                conditions += " & total_rating_count != null"; // On évite les jeux inconnus
+                break;
+            case 'rating_desc': 
+                sortLogic = "sort total_rating desc;"; 
+                conditions += " & total_rating != null"; 
+                break;
+            case 'rating_asc': 
+                sortLogic = "sort total_rating asc;"; 
+                conditions += " & total_rating != null"; 
+                break;
+        }
+        
+        bodyQuery = `${fields} where ${conditions}; ${sortLogic} limit 40; offset ${state.offset};`;
     }
 }
 
