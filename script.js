@@ -143,7 +143,7 @@ async function loadGames(isAppending = false) {
     }
 
     let bodyQuery = '';
-    const fields = "fields name, cover.url, first_release_date, platforms.name, total_rating;";
+    const fields = "fields name, cover.url, first_release_date, platforms.name, total_rating, websites.category, websites.url;";
     
     if (state.searchQuery) {
         // Mode recherche
