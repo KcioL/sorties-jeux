@@ -48,8 +48,11 @@
             <h2 id="section-title">Toutes les sorties de l'année</h2>
             <div class="loading-spinner" id="loading" style="display: none;">Chargement des données depuis IGDB...</div>
             <div class="error-message" id="error-display" style="display: none;"></div>
-            <div class="games-grid" id="games-container">
-                <!-- Les cartes de jeux seront injectées ici en JavaScript -->
+            <div class="games-grid" id="games-container"></div>
+            <div style="text-align: center; margin-top: 2.5rem;">
+                <button id="load-more-btn" class="filter-btn active" style="display: none; padding: 0.75rem 2rem; font-size: 1.1rem;">
+                    Charger plus de jeux
+                </button>
             </div>
         </section>
     </main>
