@@ -19,15 +19,29 @@
 
     <main>
         <!-- Filtres de navigation (Trimestres et Plateformes) -->
-        <section class="controls-section">
-            <div class="filter-group">
-                <h3>Trimestres</h3>
-                <div class="btn-grid" id="quarter-filters">
-                    <button class="filter-btn active" data-quarter="all">Tout l'année</button>
-                    <button class="filter-btn" data-quarter="Q1">T1 (Jan - Mar)</button>
-                    <button class="filter-btn" data-quarter="Q2">T2 (Avr - Juin)</button>
-                    <button class="filter-btn" data-quarter="Q3">T3 (Juil - Sept)</button>
-                    <button class="filter-btn" data-quarter="Q4">T4 (Oct - Déc)</button>
+<section class="controls-section">
+            <div class="filters-row-top">
+                <div class="filter-group">
+                    <h3>Période</h3>
+                    <div class="btn-grid" id="quarter-filters">
+                        <button class="filter-btn active" data-quarter="all">Toute l'année</button>
+                        <button class="filter-btn" data-quarter="Q1">T1 (Jan - Mar)</button>
+                        <button class="filter-btn" data-quarter="Q2">T2 (Avr - Juin)</button>
+                        <button class="filter-btn" data-quarter="Q3">T3 (Juil - Sept)</button>
+                        <button class="filter-btn" data-quarter="Q4">T4 (Oct - Déc)</button>
+                        <button class="filter-btn" data-quarter="anticipated" style="border-color: var(--accent-blue);">🔥 Les plus attendus</button>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <h3>Trier par</h3>
+                    <select id="sort-select" class="sort-dropdown">
+                        <option value="date_asc">Date de sortie (Plus ancien au plus récent)</option>
+                        <option value="date_desc">Date de sortie (Plus récent au plus ancien)</option>
+                        <option value="popular">Popularité (Plus d'évaluations)</option>
+                        <option value="rating_desc">Mieux notés</option>
+                        <option value="rating_asc">Moins bien notés</option>
+                    </select>
                 </div>
             </div>
 
