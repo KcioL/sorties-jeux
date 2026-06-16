@@ -143,7 +143,7 @@ async function loadGames(isAppending = false) {
 
     let bodyQuery = '';
     // NOUVEAU : Ajout de websites.category et websites.url dans la requête
-    const fields = "fields name, cover.url, first_release_date, platforms.name, total_rating, websites.category, websites.url;";
+    const fields = "fields name, cover.url, first_release_date, platforms.name, total_rating, websites.*;";
     
     if (state.searchQuery) {
         bodyQuery = `${fields} search "${state.searchQuery}"; limit 40; offset ${state.offset};`;
