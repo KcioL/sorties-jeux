@@ -337,15 +337,27 @@ footer {
     font-size: 0.9rem;
     margin-top: auto;
 }
-/* Style du menu déroulant de tri */
+/* Style des menus déroulants et agencement */
 .filters-row-top {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.dropdowns-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 1.5rem;
-    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.dropdowns-grid > div {
+    flex: 1;
+    min-width: 200px;
 }
 
 .sort-dropdown {
+    width: 100%;
     background-color: var(--bg-main);
     color: var(--text-main);
     border: 1px solid var(--border-color);
@@ -354,9 +366,8 @@ footer {
     font-size: 0.9rem;
     cursor: pointer;
     outline: none;
-    min-width: 200px;
     transition: all 0.3s ease;
-    appearance: none; /* Cache la flèche par défaut sur certains navigateurs */
+    appearance: none;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300d2ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 1rem center;
