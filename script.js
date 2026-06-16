@@ -1,5 +1,6 @@
 // Gestion des États (State) de l'Application
 const state = {
+    currentYear: '2026', // L'année sélectionnée par défaut
     currentQuarter: 'all',
     currentPlatform: 'all',
     searchQuery: '',
@@ -15,15 +16,16 @@ const sectionTitle = document.getElementById('section-title');
 const loadingSpinner = document.getElementById('loading');
 const errorDisplay = document.getElementById('error-display');
 
-// Définition des mois associés à chaque Trimestre (Année courante 2026)
-const CURRENT_YEAR = 2026;
-const quartersTimestamps = {
-    Q1: { start: Math.floor(new Date(`${CURRENT_YEAR}-01-01`).getTime() / 1000), end: Math.floor(new Date(`${CURRENT_YEAR}-03-31T23:59:59`).getTime() / 1000) },
-    Q2: { start: Math.floor(new Date(`${CURRENT_YEAR}-04-01`).getTime() / 1000), end: Math.floor(new Date(`${CURRENT_YEAR}-06-30T23:59:59`).getTime() / 1000) },
-    Q3: { start: Math.floor(new Date(`${CURRENT_YEAR}-07-01`).getTime() / 1000), end: Math.floor(new Date(`${CURRENT_YEAR}-09-30T23:59:59`).getTime() / 1000) },
-    Q4: { start: Math.floor(new Date(`${CURRENT_YEAR}-10-01`).getTime() / 1000), end: Math.floor(new Date(`${CURRENT_YEAR}-12-31T23:59:59`).getTime() / 1000) },
-    all: { start: Math.floor(new Date(`${CURRENT_YEAR}-01-01`).getTime() / 1000), end: Math.floor(new Date(`${CURRENT_YEAR}-12-31T23:59:59`).getTime() / 1000) }
-};
+// Fonction dynamique pour calculer les dates selon l'année choisie
+function getTimestamps(year) {
+    return {
+        Q1: { start: Math.floor(new Date(`${year}-01-01`).getTime() / 1000), end: Math.floor(new Date(`${year}-03-31T23:59:59`).getTime() / 1000) },
+        Q2: { start: Math.floor(new Date(`${year}-04-01`).getTime() / 1000), end: Math.floor(new Date(`${year}-06-30T23:59:59`).getTime() / 1000) },
+        Q3: { start: Math.floor(new Date(`${year}-07-01`).getTime() / 1000), end: Math.floor(new Date(`${year}-09-30T23:59:59`).getTime() / 1000) },
+        Q4: { start: Math.floor(new Date(`${year}-10-01`).getTime() / 1000), end: Math.floor(new Date(`${year}-12-31T23:59:59`).getTime() / 1000) },
+        all: { start: Math.floor(new Date(`${year}-01-01`).getTime() / 1000), end: Math.floor(new Date(`${year}-12-31T23:59:59`).getTime() / 1000) }
+    };
+}
 
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
@@ -33,6 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Configuration des écouteurs d'événements
 function setupEventListeners() {
+    // Écouteur pour le menu déroulant de l'année
+    document.getElementById('year-select').addEventListener('change', (e) => {
+        state.currentYear = e.target.value;
+        state.offset = 0; 
+        loadGames();
+    });
+
     // Filtres de trimestres
     document.getElementById('quarter-filters').addEventListener('click', (e) => {
         if (e.target.classList.contains('filter-btn')) {
@@ -59,13 +68,13 @@ function setupEventListeners() {
         }
     });
 
-    // Bouton et Entrée pour la recherche
+    // Bouton et Entrée pour la recherche textuelle
     document.getElementById('search-btn').addEventListener('click', executeSearch);
     document.getElementById('search-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') executeSearch();
     });
 
-    // Bouton "Charger plus"
+    // Bouton "Charger plus" pour la pagination
     const loadMoreBtn = document.getElementById('load-more-btn');
     if (loadMoreBtn) {
         loadMoreBtn.addEventListener('click', () => {
@@ -74,11 +83,10 @@ function setupEventListeners() {
         });
     }
 
-    // Écouteur pour le menu déroulant de tri
+    // Écouteurs pour les menus déroulants
     document.getElementById('sort-select').addEventListener('change', (e) => {
         state.currentSort = e.target.value;
         state.offset = 0; 
-        
         if(state.currentQuarter === 'anticipated') {
             document.querySelectorAll('#quarter-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector('[data-quarter="all"]').classList.add('active');
@@ -87,14 +95,12 @@ function setupEventListeners() {
         loadGames();
     });
 
-    // Écouteur pour le menu déroulant des genres
     document.getElementById('genre-select').addEventListener('change', (e) => {
         state.currentGenre = e.target.value;
         state.offset = 0; 
         loadGames();
     });
 
-    // Écouteur pour le menu déroulant des thèmes
     document.getElementById('theme-select').addEventListener('change', (e) => {
         state.currentTheme = e.target.value;
         state.offset = 0; 
@@ -110,7 +116,6 @@ function executeSearch() {
         document.querySelectorAll('#quarter-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector('[data-quarter="all"]').classList.add('active');
         state.currentQuarter = 'all';
-        
         state.offset = 0; 
         loadGames();
     }
@@ -129,26 +134,29 @@ async function loadGames(isAppending = false) {
     
     errorDisplay.style.display = 'none';
 
+    // Mise à jour du titre
     if (state.searchQuery) {
         sectionTitle.textContent = `Résultats de recherche pour : "${state.searchQuery}"`;
     } else {
         const qText = state.currentQuarter === 'all' ? "de l'année" : `du ${state.currentQuarter}`;
-        sectionTitle.textContent = `Sorties jeux vidéo ${qText} ${CURRENT_YEAR}`;
+        sectionTitle.textContent = `Sorties jeux vidéo ${qText} ${state.currentYear}`;
     }
 
     let bodyQuery = '';
     const fields = "fields name, cover.url, first_release_date, platforms.name, total_rating;";
     
     if (state.searchQuery) {
+        // Mode recherche
         bodyQuery = `${fields} search "${state.searchQuery}"; limit 40; offset ${state.offset};`;
     } else if (state.currentQuarter === 'anticipated') {
-        // Top 30 Attendus
-        sectionTitle.textContent = `Les 30 jeux les plus attendus de ${CURRENT_YEAR}`;
+        // Mode "Les plus attendus"
+        sectionTitle.textContent = `Les 30 jeux les plus attendus de ${state.currentYear}`;
         document.getElementById('sort-select').value = 'date_asc'; 
         
-        const timeRange = quartersTimestamps['all'];
+        const timeRange = getTimestamps(state.currentYear)['all'];
         let conditions = `first_release_date >= ${timeRange.start} & first_release_date <= ${timeRange.end} & hypes != null`;
         
+        // Filtres stricts (ET)
         if (state.currentPlatform !== 'all') {
             conditions += ` & platforms = ${state.currentPlatform}`;
         }
@@ -163,9 +171,10 @@ async function loadGames(isAppending = false) {
         
     } else {
         // Mode catalogue standard
-        const timeRange = quartersTimestamps[state.currentQuarter];
+        const timeRange = getTimestamps(state.currentYear)[state.currentQuarter];
         let conditions = `first_release_date >= ${timeRange.start} & first_release_date <= ${timeRange.end}`;
         
+        // Filtres stricts (ET)
         if (state.currentPlatform !== 'all') {
             conditions += ` & platforms = ${state.currentPlatform}`;
         }
@@ -176,6 +185,7 @@ async function loadGames(isAppending = false) {
             conditions += ` & themes = ${state.currentTheme}`;
         }
         
+        // Logique de tri
         let sortLogic = "";
         switch(state.currentSort) {
             case 'date_asc': 
